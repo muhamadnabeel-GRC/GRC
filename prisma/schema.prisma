@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Risk {
+  id            String   @id
+  title         String
+  statement     String
+  dept          String
+  process       String
+  category      String
+  owner         String
+  controlOwner  String
+  mitOwner      String
+  likelihood    Int
+  impact        Int
+  ctrl          Int
+  lifecycle     String
+  treatment     String
+  kri           String
+  review        String
+  tier          Int      @default(2)
+  sharedWith    String[] @default([])
+  links         Json     @default("{}")
+  controls      Control[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Control {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  owner       String
+  rating      Int
+  riskId      String
+  risk        Risk     @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Policy {
+  id          String   @id @default(cuid())
+  title       String
+  category    String
+  owner       String
+  status      String
+  version     String
+  nextReview  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

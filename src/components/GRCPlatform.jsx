@@ -4815,6 +4815,30 @@ export default function GRCPlatform() {
   const [govOpen, setGovOpen] = useState(true);
   const [aiOpen, setAiOpen] = useState(false);
   const [risks, setRisks] = useState(seedRisks);
+  useEffect(() => {
+    fetch("/api/risks")
+      .then(res => (res.ok ? res.json() : Promise.reject(res.statusText)))
+      .then(rows => {
+        if (!rows.length) return;
+        setRisks(rows.map(r => ({
+          ...r,
+          L: r.likelihood,
+          I: r.impact,
+          tier: r.tier,
+          sharedWith: r.sharedWith || [],
+          links: r.links || {},
+        })));
+      })
+      .catch(() => { /* fall back to seed data */ });
+  }, []);
+  const createRisk = (r) => {
+    const { L, I, ...rest } = r;
+    fetch("/api/risks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...rest, likelihood: L, impact: I }),
+    }).catch(() => {});
+  };
   const [selRisk, setSelRisk] = useState(null);
   const [selAsset, setSelAsset] = useState(null);
   const [ermTab, setErmTab] = useState("Journey");
@@ -4909,8 +4933,8 @@ export default function GRCPlatform() {
           {module === "Learning & Development" && <Learning navigate={navigate} />}
           {module === "Activity Log" && <ActivityLog deptScope={deptScope} />}
           {module === "Relationship Graph" && <RelationshipGraph risks={risks} openRisk={setSelRisk} openAsset={setSelAsset} navigate={navigate} />}
-          {module === "Enterprise Risk" && <ERM risks={risks} addRisk={r => setRisks(rs => [...rs, r])} openRisk={setSelRisk} tab={ermTab} setTab={setErmTab} deptScope={deptScope} />}
-          {module === "Business Continuity" && <BCM tab={bcmTab} setTab={setBcmTab} navigate={navigate} deptScope={deptScope} openRisk={setSelRisk} risks={risks} addRisk={r => setRisks(rs => [...rs, r])} />}
+          {module === "Enterprise Risk" && <ERM risks={risks} addRisk={r => { setRisks(rs => [...rs, r]); createRisk(r); }} openRisk={setSelRisk} tab={ermTab} setTab={setErmTab} deptScope={deptScope} />}
+          {module === "Business Continuity" && <BCM tab={bcmTab} setTab={setBcmTab} navigate={navigate} deptScope={deptScope} openRisk={setSelRisk} risks={risks} addRisk={r => { setRisks(rs => [...rs, r]); createRisk(r); }} />}
           {module === "Information Security" && <InfoSec tab={isTab} setTab={setIsTab} openRisk={setSelRisk} risks={risks} deptScope={deptScope} openAsset={setSelAsset} />}
           {module === "Compliance Mapping" && (deptScope ? <Card className="p-8 max-w-xl"><Lock size={20} className="text-slate-400 mb-3" /><div className="font-semibold text-slate-100">Compliance mapping is managed centrally</div><p className="text-sm text-slate-500 mt-1.5">Clause-level mapping and evidence approval sit with the GRC Owner, CISO and BCM Specialist. Your department contributes through assigned corrective actions and evidence requests, which appear in your Corrective Actions module.</p></Card> : <Compliance />)}
           {module === "Incidents & Issues" && <Incidents navigate={navigate} deptScope={deptScope} />}
